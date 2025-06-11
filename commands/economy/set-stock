@@ -1,0 +1,74 @@
+// commands/economy/set-stock.js
+const { SlashCommandBuilder } = require('discord.js');
+const fs = require('fs');
+const updateStockMessage = require('../../utils/updateStockMessage');
+
+const configPath = './data/stockMessages.json';
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('set-stock')
+    .setDescription('Add to stock and optionally set stock message channel & message for a game')
+    .addStringOption(opt =>
+      opt.setName('game')
+        .setDescription('Select the game')
+        .setRequired(true)
+        .addChoices(
+          { name: 'Dahood', value: 'game1' },
+          { name: 'Grow a Garden', value: 'game2' },
+          { name: 'Bladeball', value: 'game3' }
+        ))
+    .addStringOption(opt =>
+      opt.setName('item')
+        .setDescription('Item name to add to stock')
+        .setRequired(true))
+    .addIntegerOption(opt =>
+      opt.setName('quantity')
+        .setDescription('Quantity to add to stock')
+        .setRequired(true))
+    .addChannelOption(opt =>
+      opt.setName('channel')
+        .setDescription('The channel where the stock message is located')
+        .setRequired(false))
+    .addStringOption(opt =>
+      opt.setName('messageid')
+        .setDescription('The ID of the stock message')
+        .setRequired(false)),
+
+  async execute(interaction) {
+    const game = interaction.options.getString('game');
+    const item = interaction.options.getString('item');
+    const quantity = interaction.options.getInteger('quantity');
+    const channel = interaction.options.getChannel('channel');
+    const messageId = interaction.options.getString('messageid');
+
+    // Load or init stock for the game
+    const stockPath = `./data/stock_${game}.json`;
+    let stock = fs.existsSync(stockPath) ? JSON.parse(fs.readFileSync(stockPath)) : {};
+
+    // Add the item qty
+    stock[item] = (stock[item] || 0) + quantity;
+    fs.writeFileSync(stockPath, JSON.stringify(stock, null, 2));
+
+    // Optionally update stock message config if channel and messageId provided
+    if (channel && messageId) {
+      let stockMessages = fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath)) : {};
+      stockMessages[game] = {
+        channelId: channel.id,
+        messageId: messageId
+      };
+      fs.writeFileSync(configPath, JSON.stringify(stockMessages, null, 2));
+    }
+
+    // Update the stock message in Discord
+    await updateStockMessage(interaction.client, game);
+
+    // Reply success message
+    let replyMsg = `✅ Added ${quantity}x ${item} to stock for **${game}**.`;
+    if (channel && messageId) {
+      replyMsg += `\n✅ Stock message for **${game}** set to <#${channel.id}> with message ID \`${messageId}\`.`;
+    }
+
+    await interaction.reply(replyMsg);
+  }
+};

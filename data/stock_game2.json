@@ -1,0 +1,13 @@
+{
+  "PETS": {
+    "Queen Bee": { "qty": 400, "price": 3, "emoji": ":QueenBee:" },
+    "Racoon": { "qty": 60, "price": 7, "emoji": ":racoon:" },
+    "Dragonfly": { "qty": 60, "price": 7, "emoji": ":dragonfly:" },
+    "Butterfly": { "qty": 57, "price": 5, "emoji": ":butterfly:" }
+  },
+  "SHECKLES": {
+    "1t": { "price": 5 },
+    "500b": { "price": 3 },
+    "250b": { "price": 2 }
+  }
+}
